@@ -6,6 +6,7 @@ module Ratyrate
     dimension = nil if dimension.blank?
 
     if can_rate? user, dimension
+      return unless stars.to_i > 0
       rates(dimension).create! do |r|
         r.stars = stars
         r.rater = user
@@ -15,8 +16,14 @@ module Ratyrate
       else
         update_rate_average(stars, dimension)
       end
-    else
+    elsif stars.to_i > 0
       update_current_rate(stars, user, dimension)
+    else
+      current_rate = rates(dimension).where(rater_id: user.id).take.destroy
+      a = average(dimension)
+      a.qty = rates(dimension).count
+      a.avg = rates(dimension).average(:stars)
+      a.save!(validate: false)
     end
   end
 
