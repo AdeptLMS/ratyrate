@@ -1,7 +1,6 @@
 module Ratyrate
   module Helpers
-    def rating_for(rateable_obj, dimension=nil, options={})
-
+    def rating_for(rateable_obj, dimension = nil, options = {})
       cached_average = rateable_obj.average dimension
       avg = cached_average ? cached_average.avg : 0
 
@@ -27,6 +26,7 @@ module Ratyrate
       targetFormat = options[:targetFormat] || '{score}'
       targetScore  = options[:targetScore]  || ''
       readOnly     = options[:readonly]     || false
+      rate_for     = options[:rate_for]     || nil
 
       disable_after_rate = options[:disable_after_rate] && true
       disable_after_rate = true if disable_after_rate == nil
@@ -41,7 +41,7 @@ module Ratyrate
 
       if options[:imdb_avg] && readOnly
         content_tag :div, '', :style => "background-image:url('#{image_path('mid-star.png')}');width:61px;height:57px;margin-top:10px;" do
-            content_tag :p, avg, :style => "position:relative;font-size:.8rem;text-align:center;line-height:60px;"
+          content_tag :p, avg, :style => "position:relative;font-size:.8rem;text-align:center;line-height:60px;"
         end
       else
         content_tag :div, '', "data-dimension" => dimension, :class => "star", "data-rating" => avg,
@@ -68,7 +68,8 @@ module Ratyrate
                     "data-target-text" => targetText,
                     "data-target-type" => targetType,
                     "data-target-format" => targetFormat,
-                    "data-target-score" => targetScore
+                    "data-target-score" => targetScore,
+                    "data-rate-for" => rate_for
       end
     end
 
@@ -84,8 +85,8 @@ module Ratyrate
     def rating_for_user(rateable_obj, rating_user, dimension = nil, options = {})
       @object = rateable_obj
       @user   = rating_user
-  	  @rating = Rate.find_by_rater_id_and_rateable_id_and_dimension(@user.id, @object.id, dimension)
-  	  stars = @rating ? @rating.stars : 0
+      @rating = Rate.find_by_rater_id_and_rateable_id_and_dimension(@user.id, @object.id, dimension)
+      stars = @rating ? @rating.stars : 0
 
       star         = options[:star]         || 5
       enable_half  = options[:enable_half]  || false
@@ -109,6 +110,7 @@ module Ratyrate
       targetFormat = options[:targetFormat] || '{score}'
       targetScore  = options[:targetScore]  || ''
       readOnly     = options[:readonly]     || false
+      rate_for     = options[:rate_for]     || nil
 
       disable_after_rate = options[:disable_after_rate] || false
 
@@ -139,7 +141,8 @@ module Ratyrate
                   "data-target" => target,
                   "data-target-text" => targetText,
                   "data-target-format" => targetFormat,
-                  "data-target-score" => targetScore
+                  "data-target-score" => targetScore,
+                  "data-rate-for" => rate_for
     end
   end
 end
