@@ -8,6 +8,7 @@ module Ratyrate
       dimension = nil if dimension.blank?
 
       if can_rate? user, dimension
+        return unless stars.to_i > 0
         rates(dimension).create! do |r|
           r.stars = stars
           r.rater = user
@@ -17,8 +18,14 @@ module Ratyrate
         else
           update_rate_average(stars, dimension)
         end
-      else
+      elsif stars.to_i > 0
         update_current_rate(stars, user, dimension)
+      else
+        current_rate = rates(dimension).where(rater_id: user.id).take.destroy
+        a = average(dimension)
+        a.qty = rates(dimension).count
+        a.avg = rates(dimension).average(:stars)
+        a.save!(validate: false)
       end
     end
 
@@ -90,7 +97,7 @@ module Ratyrate
 
     # calculates the movie overall average rating for all users
     def calculate_overall_average
-      rating = Rate.where(rateable: self).pluck('stars')
+      rating = Rate.where(rateable: self).where('stars > ?', 0.0).pluck('stars')
       (rating.reduce(:+).to_f / rating.size).round(1)
     end
 
@@ -121,14 +128,14 @@ module Ratyrate
       end
 
       def ratyrate_rateable(*dimensions)
-        has_many :rates_without_dimension, -> { where dimension: nil}, as: :rateable, class_name: 'Rate', dependent: :destroy
+        has_many :rates_without_dimension, -> { where(dimension: nil).where('stars > ?', 0.0) }, as: :rateable, class_name: 'Rate', dependent: :destroy
         has_many :raters_without_dimension, through: :rates_without_dimension, source: :rater
 
         has_one :rate_average_without_dimension, -> { where dimension: nil}, as: :cacheable,
                 class_name: 'RatingCache', dependent: :destroy
 
         dimensions.each do |dimension|
-          has_many "#{dimension}_rates".to_sym, -> {where dimension: dimension.to_s},
+          has_many "#{dimension}_rates".to_sym, -> { where(dimension: dimension.to_s).where('stars > ?', 0.0) },
                                                 dependent: :destroy,
                                                 class_name: 'Rate',
                                                 as: :rateable
